@@ -22,3 +22,17 @@ export interface ICustomer {
   phone: string;
   address: string;
 }
+
+
+
+export interface IOrderRequest {
+    payment: TPayment;
+    email: string;
+    phone: string;
+    address: string;
+}
+
+export interface IOrderResponse {
+    id: string;
+    total: number;
+}

@@ -1,4 +1,4 @@
-import { IProduct } from "../../../types";
+import { IProduct } from "./../../types";
 
 export class Cart {
   private items: IProduct[] = [];
@@ -18,7 +18,7 @@ export class Cart {
   }
 
   removeItem(itemId: string): void {
-    this.items = this.items.filter(item => item.id !== itemId);
+    this.items = this.items.filter((item) => item.id !== itemId);
   }
 
   clear(): void {
