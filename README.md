@@ -197,6 +197,6 @@ constructor(api: IApi)
    * GET‑запрос к `/product/`;  
    * возвращает список товаров.
 
-2. `sendOrder(orderData: IOrder): Promise<any>`  
+2. `sendOrder(orderData: IOrder): Promise`  
    * POST‑запрос к `/order/`;  
    * отправляет данные заказа (покупатель + товары).

@@ -2,7 +2,7 @@ import './scss/styles.scss';
 import { Cart } from "./components/models/Cart";
 import { Product } from "./components/models/Product";
 import { Customer } from "./components/models/Customer";
-import { ApiClient } from "./components/base/ApiClient";
+import { ApiClient } from "./components/models/ApiClient";
 import { apiProducts } from "./utils/data";
 import { Api } from "./components/base/Api";
 import { API_URL } from "./utils/constants";
@@ -60,7 +60,11 @@ console.log("После очистки данных:", customerModel.getCustomer
 const apiClient = new ApiClient(new Api(API_URL));
 
 apiClient.fetchProducts()
-  .then(() => {
-    console.log("Каталог с сервера:", catalogModel.getProducts());
+  .then(products => {
+    console.log("Каталог с сервера:", products);
+
+    catalogModel.setProducts(products);
+
+    console.log("Каталог в модели:", catalogModel.getProducts());
   })
   .catch(error => console.error("Ошибка API:", error));
