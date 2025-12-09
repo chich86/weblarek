@@ -1,4 +1,4 @@
-проверка
+
 ## Проектная работа «Веб‑ларёк»
 
 
@@ -200,3 +200,187 @@ constructor(api: IApi)
 2. `sendOrder(orderData: IOrder): Promise`  
    * POST‑запрос к `/order/`;  
    * отправляет данные заказа (покупатель + товары).
+
+
+### Слой представления (View)
+
+Для обеспечения корректного отображения данных на сайте требуется реализовать набор классов, каждый из которых отвечает за определённый элемент интерфейса. Ниже приведено их описание.
+
+#### 1. Класс `Header`
+**Назначение:** отображение кнопки‑корзины с счётчиком в шапке сайта.
+
+**Конструктор:**  
+`(protected events: IEvents, container: HTMLElement)`
+
+**Поля:**
+- `basketButton: HTMLButtonElement` — кнопка для открытия корзины;
+- `counterElement: HTMLElement` — элемент, отображающий количество товаров в корзине.
+
+**Методы:**
+- `set counter(value: number)` — обновляет значение счётчика корзины.
+
+#### 2. Класс `Gallery`
+**Назначение:** отображение списка товаров на главной странице.
+
+**Конструктор:**  
+`(container: HTMLElement)`
+
+**Методы:**
+- `set catalog(items: HTMLElement[])` — заполняет контейнер переданным списком элементов.
+
+#### 3. Класс `Modal`
+**Назначение:** универсальное модальное окно, которое можно заполнять произвольными компонентами.
+
+**Конструктор:**  
+`(protected events: IEvents, container: HTMLElement)`
+
+**Поля:**
+- `closeButton: HTMLButtonElement` — кнопка закрытия окна;
+- `contentElement: HTMLElement` — контейнер для размещения компонентов.
+
+**Методы:**
+- `open()` — открывает модальное окно;
+- `close()` — закрывает модальное окно;
+- `set content(element: HTMLElement)` — помещает компонент в контейнер окна.
+
+#### 4. Класс `OrderSuccess`
+**Назначение:** отображение сообщения об успешном оформлении заказа в модальном окне.
+
+**Конструктор:**  
+`(protected events: IEvents, container: HTMLElement)`
+
+**Поля:**
+- `titleElement: HTMLElement` — заголовок сообщения;
+- `descriptionElement: HTMLElement` — описание заказа;
+- `closeButton: HTMLButtonElement` — кнопка закрытия окна после успешного заказа.
+
+**Методы:**
+- `set total(value: number)` — показывает сумму, списанную при оплате.
+
+#### 5. Класс `Card`
+**Назначение:** базовый класс для всех карточек товаров, содержит общие поля и методы.
+
+**Конструктор:**  
+`(container: HTMLElement)`
+
+**Поля:**
+- `titleElement: HTMLElement` — заголовок товара;
+- `priceElement: HTMLElement` — цена товара;
+- `_id: string` — идентификатор товара.
+
+**Методы:**
+- `get id()` — возвращает идентификатор товара;
+- `set id(id: string)` — устанавливает идентификатор товара;
+- `set title(value: string)` — задаёт заголовок товара;
+- `set price(value: number | null)` — устанавливает цену товара.
+
+#### 6. Класс `CardCatalog`
+**Назначение:** карточка товара в каталоге (наследует `Card`).
+
+**Конструктор:**  
+`(protected events: IEvents, container: HTMLElement)`
+
+**Поля:**
+- `categoryElement: HTMLElement` — категория товара;
+- `imageElement: HTMLImageElement` — изображение товара.
+
+**Методы:**
+- `set category(value: string)` — задаёт категорию товара;
+- `set image(img: HTMLImageElement, url: string, alt?: string)` — устанавливает изображение по URL.
+
+#### 7. Класс `CardPreview`
+**Назначение:** карточка товара в модальном окне (наследует `Card`).
+
+**Конструктор:**  
+`(protected events: IEvents, container: HTMLElement)`
+
+**Поля:**
+- `categoryElement: HTMLElement` — категория товара;
+- `descriptionElement: HTMLElement` — описание товара;
+- `cardButton: HTMLButtonElement` — кнопка добавления/удаления из корзины;
+- `imageElement: HTMLImageElement` — изображение товара;
+- `_inCart: boolean` — флаг наличия товара в корзине.
+
+**Методы:**
+- `set category(value: string)` — задаёт категорию;
+- `set description(value: string)` — устанавливает описание;
+- `set inCart(value: boolean)` — меняет текст кнопки в зависимости от наличия в корзине;
+- `disableButton()` — отключает кнопку;
+- `set image(value: string)` — устанавливает URL изображения;
+- `updateButtonState()` — обновляет состояние кнопки.
+
+#### 8. Класс `CardBasket`
+**Назначение:** карточка товара в корзине (наследует `Card`).
+
+**Конструктор:**  
+`(protected events: IEvents, container: HTMLElement)`
+
+**Поля:**
+- `indexElement: HTMLElement` — порядковый номер товара в корзине;
+- `itemDeleteButton: HTMLButtonElement` — кнопка удаления товара.
+
+**Методы:**
+- `set index(value: number)` — задаёт порядковый номер.
+
+#### 9. Класс `Basket`
+**Назначение:** отображение содержимого корзины.
+
+**Конструктор:**  
+`(protected events: IEvents, container: HTMLElement)`
+
+**Поля:**
+- `listElements: HTMLElement` — список товаров в корзине;
+- `priceElements: HTMLElement` — общая стоимость товаров;
+- `basketButton: HTMLButtonElement` — кнопка оформления заказа.
+
+**Методы:**
+- `set items(elements: HTMLElement[])` — обновляет список покупок;
+- `set total(value: number)` — устанавливает итоговую сумму.
+
+#### 10. Класс `Form`
+**Назначение:** базовый класс для всех форм, содержит общие поля и логику.
+
+**Конструктор:**  
+`(protected events: IEvents, container: HTMLElement)`
+
+**Поля:**
+- `formElement: HTMLFormElement` — сама форма;
+- `formErrors: HTMLElement` — область отображения ошибок;
+- `formInputs: HTMLElement` — поля ввода;
+- `nextButton: HTMLButtonElement` — кнопка перехода к следующему шагу.
+
+**Методы:**
+- `set isButtonValid(value: boolean)` — активирует/деактивирует кнопку;
+- `set errors(text: string)` — выводит текст ошибки.
+
+#### 11. Класс `OrderForm`
+**Назначение:** форма выбора способа оплаты и ввода адреса доставки (наследует `Form`).
+
+**Конструктор:**  
+`(protected events: IEvents, container: HTMLElement)`
+
+**Поля:**
+- `addressElement: HTMLInputElement` — поле для адреса доставки;
+- `cashButton: HTMLButtonElement` — кнопка выбора оплаты «Cash»;
+- `cardButton: HTMLButtonElement` — кнопка выбора оплаты «Card».
+
+**Методы:**
+- `setPayment(payment: TPayment): void` — переключает активный класс кнопки при выборе способа оплаты;
+- `set payment(value: TPayment)` — устанавливает тип оплаты;
+- `set addressValue(value: string)` — задаёт адрес доставки;
+- `validateForm(errors: IErrors): void` — проверяет корректность введённых данных.
+
+#### 12. Класс `ContactsForm`
+**Назначение:** форма ввода email и телефона (наследует `Form`).
+
+**Конструктор:**  
+`(protected events: IEvents, container: HTMLElement)`
+
+**Поля:**
+- `emailElement: HTMLInputElement` — поле для email;
+- `phoneElement: HTMLInputElement` — поле для номера телефона.
+
+**Методы:**
+- `set emailValue(value: string)` — устанавливает email;
+- `set phoneValue(value: string)` — устанавливает номер телефона;
+- `validateForm(errors: IErrors): void` — проверяет корректность данных.
