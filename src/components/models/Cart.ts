@@ -1,7 +1,12 @@
-import { IProduct } from "./../../types";
+import { IProduct } from './../../types';
+import { EventEmitter } from '../base/Events';
 
-export class Cart {
+export class Cart extends EventEmitter {
   private items: IProduct[] = [];
+
+  constructor() {
+    super();
+  }
 
   getItems(): IProduct[] {
     return this.items;
@@ -14,15 +19,22 @@ export class Cart {
   addItem(product: IProduct): void {
     if (!this.hasItem(product.id)) {
       this.items.push(product);
+      this.emit('cart:item-added', product);
+      this.emit('cart:changed', this.items);
     }
   }
 
   removeItem(itemId: string): void {
-    this.items = this.items.filter((item) => item.id !== itemId);
-  }
+  this.items = this.items.filter((item) => item.id !== itemId);
+  this.emit('cart:item-removed', { itemId });
+  this.emit('cart:changed', { items: this.items });
+}
+
 
   clear(): void {
     this.items = [];
+    this.emit('cart:cleared');
+    this.emit('cart:changed', this.items);
   }
 
   getCount(): number {
@@ -30,6 +42,9 @@ export class Cart {
   }
 
   getTotal(): number {
-    return this.items.reduce((total, item) => total + (item.price ?? 0), 0);
+    return this.items.reduce(
+      (total, item) => total + (item.price ?? 0),
+      0
+    );
   }
 }
