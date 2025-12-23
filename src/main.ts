@@ -1,70 +1,213 @@
 import './scss/styles.scss';
-import { Cart } from "./components/models/Cart";
-import { Product } from "./components/models/Product";
-import { Customer } from "./components/models/Customer";
-import { ApiClient } from "./components/models/ApiClient";
-import { apiProducts } from "./utils/data";
-import { Api } from "./components/base/Api";
-import { API_URL } from "./utils/constants";
 
-// --- Каталог товаров ---
-const catalogModel = new Product();
-catalogModel.setProducts(apiProducts.items);
+import { Product } from './components/models/Product';
+import { Cart } from './components/models/Cart';
+import { Customer } from './components/models/Customer';
+import { ApiClient } from './components/models/ApiClient';
+import { Api } from './components/base/Api';
+import { EventEmitter } from './components/base/Events';
 
-console.log("Массив товаров из каталога:", catalogModel.getProducts());
+import { Gallery } from './components/views/Gallery';
+import { Header } from './components/views/Header';
+import { Modal } from './components/views/Modal';
+import { Basket } from './components/views/Basket';
+import { OrderForm } from './components/views/OrderForm';
+import { ContactsForm } from './components/views/ContactsForm';
+import { OrderSuccess } from './components/views/OrderSuccess';
+import { CardCatalog } from './components/views/CardCatalog';
+import { CardPreview } from './components/views/CardPreview';
+import { CardBasket } from './components/views/CardBasket';
 
-// Выбор первого товара
-const firstProduct = apiProducts.items[0];
-if (firstProduct) {
-  catalogModel.setSelected(firstProduct);
-  console.log('Выбранный товар:', catalogModel.getSelected());
+import { ensureElement, cloneTemplate } from './utils/utils';
+import { API_URL } from './utils/constants';
+import { IOrderRequest } from './types';
+import { IProduct } from "./types/index";
+import { TPayment } from './types';
+
+/* ======================
+   Инициализация
+====================== */
+
+const events = new EventEmitter();
+const api = new ApiClient(new Api(API_URL));
+
+const catalog = new Product();
+const cart = new Cart();
+const customer = new Customer();
+
+/* ======================
+   Представления и шаблоны
+====================== */
+
+const header = new Header(events, ensureElement('.header'));
+const gallery = new Gallery(ensureElement('.gallery'));
+const modal = new Modal(events, ensureElement('.modal'));
+
+const templates = {
+  catalog: ensureElement<HTMLTemplateElement>('#card-catalog'),
+  preview: ensureElement<HTMLTemplateElement>('#card-preview'),
+  basketCard: ensureElement<HTMLTemplateElement>('#card-basket'),
+  basket: ensureElement<HTMLTemplateElement>('#basket'),
+  order: ensureElement<HTMLTemplateElement>('#order'),
+  contacts: ensureElement<HTMLTemplateElement>('#contacts'),
+  success: ensureElement<HTMLTemplateElement>('#success'),
+};
+
+const basketView = new Basket(events, cloneTemplate(templates.basket));
+const orderForm = new OrderForm(events, cloneTemplate(templates.order));
+const contactsForm = new ContactsForm(events, cloneTemplate(templates.contacts));
+const successView = new OrderSuccess(events, cloneTemplate(templates.success));
+
+/* ======================
+   Каталог
+====================== */
+
+function drawCatalog() {
+  const cards = catalog.getProducts().map((product) => {
+    const card = new CardCatalog(events, cloneTemplate(templates.catalog));
+    return card.render(product);
+  });
+
+  gallery.render({ catalog: cards });
 }
 
-// --- Покупатель ---
-const customerModel = new Customer();
+catalog.on('product:list-changed', drawCatalog);
 
-customerModel.setCustomerInfo({
-  payment: 'card',
-  address: "Spb Vosstania 1",
-  phone: "+71234567890",
-  email: "test@test.ru",
+/* ======================
+   Превью товара
+====================== */
+
+catalog.on(
+  'product:selected',
+  ({ product }: { product: IProduct }) => {
+    const preview = new CardPreview(events, cloneTemplate(templates.preview));
+
+    const element = preview.render({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      category: product.category,
+      image: product.image,
+      description: product.description,
+      inCart: cart.hasItem(product.id),
+    });
+
+    modal.content = element;
+    modal.open();
+  }
+);
+
+
+events.on('card:open', ({ card }: { card: string }) => {
+  const product = catalog.getProductById(card);
+  if (product) {
+    catalog.setSelected(product);
+  }
 });
 
-console.log("Информация о покупателе:", customerModel.getCustomerInfo());
+/* ======================
+   Корзина
+====================== */
 
-// --- Корзина ---
-const cartModel = new Cart();
-const [product1, product2] = apiProducts.items;
+function drawBasket() {
+  const items = cart.getItems().map((item, index) => {
+    const card = new CardBasket(events, cloneTemplate(templates.basketCard));
+    card.index = index + 1;
+    return card.render(item);
+  });
 
-[product1, product2].forEach(p => p && cartModel.addItem(p));
+  basketView.items = items;
+  basketView.total = cart.getTotal();
+}
 
-console.log("Содержимое корзины:", cartModel.getItems());
-console.log("Общее количество товаров:", cartModel.getCount());
-console.log("Общая сумма корзины:", cartModel.getTotal());
-console.log(`Есть ли товар "${product1?.id}"?`, cartModel.hasItem(product1?.id || ''));
+cart.on('cart:changed', () => {
+  header.counter = cart.getCount();
+  drawBasket();
+});
 
-// Удаление и очистка
-if (product1) cartModel.removeItem(product1.id);
-console.log("После удаления:", cartModel.getItems());
+events.on('card:add', ({ card }: { card: string }) => {
+  const product = catalog.getProductById(card);
+  if (product && product.price !== null) {
+    cart.addItem(product);
+  }
+});
 
-cartModel.clear();
-console.log("После очистки корзины:", cartModel.getCount());
+events.on('card:delete', ({ card }: { card: string }) => {
+  cart.removeItem(card);
+});
 
-// --- Валидация ---
-console.log("Валидация данных:", customerModel.validateCustomerInfo());
+events.on('basket:open', () => {
+  drawBasket();
+  modal.content = basketView.render();
+  modal.open();
+});
 
-customerModel.clearCustomerInfo();
-console.log("После очистки данных:", customerModel.getCustomerInfo());
+/* ======================
+   Оформление заказа
+====================== */
 
-// --- Работа с сервером ---
-const apiClient = new ApiClient(new Api(API_URL));
+events.on('basket:order', () => {
+  if (!cart.getCount()) return;
 
-apiClient.fetchProducts()
-  .then(products => {
-    console.log("Каталог с сервера:", products);
+  const data = customer.getCustomerInfo();
+  orderForm.payment = data.payment;
+  orderForm.addressValue = data.address;
 
-    catalogModel.setProducts(products);
+  modal.content = orderForm.render();
+  modal.open();
+});
 
-    console.log("Каталог в модели:", catalogModel.getProducts());
-  })
-  .catch(error => console.error("Ошибка API:", error));
+customer.on('customer:changed', () => {
+  const errors = customer.validateCustomerInfo();
+  orderForm.validateForm(errors);
+  contactsForm.validateForm(errors);
+});
+
+events.on(
+  'order:change',
+  ({ field, value }: { field: string; value: string }) => {
+    if (field === 'payment' && (value === 'cash' || value === 'card')) {
+      customer.payment = value as TPayment;
+      return;
+    }
+
+    if (field === 'address') customer.address = value;
+    if (field === 'email') customer.email = value;
+    if (field === 'phone') customer.phone = value;
+  }
+);
+
+
+events.on('order:next', () => {
+  const data = customer.getCustomerInfo();
+  contactsForm.emailValue = data.email;
+  contactsForm.phoneValue = data.phone;
+
+  modal.content = contactsForm.render();
+});
+
+events.on('contacts:submit', () => {
+  const order: IOrderRequest = customer.getCustomerInfo();
+
+  api.sendOrder(order)
+    .then((response) => {
+      cart.clear();
+      customer.clearCustomerInfo();
+
+      successView.total = response.total;
+      modal.content = successView.render();
+    })
+    .catch(console.error);
+});
+
+events.on('success:closed', () => {
+  modal.close();
+});
+
+/* ======================
+   Загрузка данных
+====================== */
+
+api.fetchProducts()
+  .then((products) => catalog.setProducts(products))
+  .catch(console.error);
