@@ -20,7 +20,6 @@ import { CardBasket } from './components/views/CardBasket';
 
 import { ensureElement, cloneTemplate } from './utils/utils';
 import { API_URL } from './utils/constants';
-import { IOrderRequest } from './types';
 import { IProduct } from "./types/index";
 import { TPayment } from './types';
 
@@ -97,12 +96,9 @@ catalog.on(
   }
 );
 
-
 events.on('card:open', ({ card }: { card: string }) => {
   const product = catalog.getProductById(card);
-  if (product) {
-    catalog.setSelected(product);
-  }
+  if (product) catalog.setSelected(product);
 });
 
 /* ======================
@@ -127,9 +123,7 @@ cart.on('cart:changed', () => {
 
 events.on('card:add', ({ card }: { card: string }) => {
   const product = catalog.getProductById(card);
-  if (product && product.price !== null) {
-    cart.addItem(product);
-  }
+  if (product && product.price !== null) cart.addItem(product);
 });
 
 events.on('card:delete', ({ card }: { card: string }) => {
@@ -146,6 +140,7 @@ events.on('basket:open', () => {
    Оформление заказа
 ====================== */
 
+// Открытие формы оформления (первый шаг)
 events.on('basket:order', () => {
   if (!cart.getCount()) return;
 
@@ -157,12 +152,14 @@ events.on('basket:order', () => {
   modal.open();
 });
 
+// Обновление форм при изменении данных покупателя
 customer.on('customer:changed', () => {
   const errors = customer.validateCustomerInfo();
   orderForm.validateForm(errors);
   contactsForm.validateForm(errors);
 });
 
+// Обработка изменений на формах
 events.on(
   'order:change',
   ({ field, value }: { field: string; value: string }) => {
@@ -170,14 +167,13 @@ events.on(
       customer.payment = value as TPayment;
       return;
     }
-
     if (field === 'address') customer.address = value;
     if (field === 'email') customer.email = value;
     if (field === 'phone') customer.phone = value;
   }
 );
 
-
+// Переход к второму шагу (ContactsForm)
 events.on('order:next', () => {
   const data = customer.getCustomerInfo();
   contactsForm.emailValue = data.email;
@@ -186,11 +182,21 @@ events.on('order:next', () => {
   modal.content = contactsForm.render();
 });
 
+// Отправка заказа
 events.on('contacts:submit', () => {
-  const order: IOrderRequest = customer.getCustomerInfo();
+  const customerData = customer.getCustomerInfo();
+
+  const order = {
+    ...customerData,
+    total: cart.getTotal(),
+    items: cart.getItems().map(item => item.id)
+  };
+
+  console.log('Данные для отправки заказа:', order);
 
   api.sendOrder(order)
     .then((response) => {
+      console.log('Ответ сервера:', response);
       cart.clear();
       customer.clearCustomerInfo();
 
@@ -200,6 +206,8 @@ events.on('contacts:submit', () => {
     .catch(console.error);
 });
 
+
+// Закрытие окна успешного заказа
 events.on('success:closed', () => {
   modal.close();
 });

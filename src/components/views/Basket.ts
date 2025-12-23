@@ -29,7 +29,7 @@ export class Basket extends Component<IBasket> {
     );
 
     this.basketButton.addEventListener("click", () =>
-      this.events.emit("basket:ready")
+      this.events.emit("basket:order")
     );
   }
 
