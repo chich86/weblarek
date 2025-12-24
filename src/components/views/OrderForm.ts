@@ -43,20 +43,14 @@ export class OrderForm extends Form<TOrderForm> {
       })
     );
 
+    this.nextButton.textContent = "Далее";
     this.nextButton.addEventListener("click", (e) => {
       e.preventDefault();
-      if (!this.nextButton.disabled) {
-        this.events.emit("order:next");
-      }
+      this.events.emit("order:next");
     });
-
-    this.events.on("form:errors", (errors: IError) =>
-      this.validateForm(errors)
-    );
   }
 
   private setPayment(payment: TPayment): void {
-    this.toggleButtonState(payment);
     this.events.emit("order:change", { field: "payment", value: payment });
   }
 

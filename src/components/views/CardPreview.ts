@@ -17,7 +17,6 @@ export class CardPreview extends Card<TCardPreview> {
   protected descriptionElement: HTMLElement;
   protected cardButton: HTMLButtonElement;
   protected imageElement: HTMLImageElement;
-  protected _inCart: boolean = false;
 
   constructor(protected events: IEvents, container: HTMLElement) {
     super(container);
@@ -40,13 +39,7 @@ export class CardPreview extends Card<TCardPreview> {
     );
 
     this.cardButton.addEventListener("click", () => {
-      if (this.price === null) return;
-
-      const isInCart = this.cardButton.getAttribute("data-in-cart") === "true";
-
-      this.events.emit(isInCart ? "card:delete" : "card:add", {
-        card: this.id,
-      });
+      this.events.emit("card:toggle", { card: this.id });
     });
   }
 
@@ -75,25 +68,16 @@ export class CardPreview extends Card<TCardPreview> {
   }
 
   set inCart(value: boolean) {
-    if (this.price === null) {
-      this.disableButton();
-      return;
-    }
-
     if (value) {
-      this.cardButton.setAttribute("data-in-cart", "true");
       this.cardButton.textContent = "Удалить из корзины";
     } else {
-      this.cardButton.removeAttribute("data-in-cart");
       this.cardButton.textContent = "Купить";
     }
-
     this.cardButton.disabled = false;
   }
 
   disableButton() {
     this.cardButton.disabled = true;
     this.cardButton.textContent = "Недоступно";
-    this.cardButton.removeAttribute("data-in-cart");
   }
 }

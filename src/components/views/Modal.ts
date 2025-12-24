@@ -38,6 +38,10 @@ export class Modal extends Component<IModal> {
     this.contentElement.replaceChildren();
   }
 
+  public isActive(): boolean {
+    return this.container.classList.contains("modal_active");
+  }
+
   set content(element: HTMLElement) {
     this.contentElement.replaceChildren(element);
   }

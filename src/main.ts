@@ -101,6 +101,19 @@ events.on('card:open', ({ card }: { card: string }) => {
   if (product) catalog.setSelected(product);
 });
 
+events.on("card:toggle", ({ card }: { card: string }) => {
+  const product = catalog.getProductById(card);
+  if (!product || product.price === null) return;
+
+  if (cart.hasItem(card)) {
+    cart.removeItem(card);
+  } else {
+    cart.addItem(product);
+  }
+});
+
+
+
 /* ======================
    Корзина
 ====================== */
@@ -121,14 +134,25 @@ cart.on('cart:changed', () => {
   drawBasket();
 });
 
-events.on('card:add', ({ card }: { card: string }) => {
+events.on("card:toggle", ({ card }: { card: string }) => {
   const product = catalog.getProductById(card);
-  if (product && product.price !== null) cart.addItem(product);
+  if (!product || product.price === null) return;
+
+  if (cart.hasItem(card)) {
+    cart.removeItem(card);
+  } else {
+    cart.addItem(product);
+  }
+
+  // Перерисовать корзину, если она открыта
+  if (modal.isActive()) {
+  drawBasket();
+  modal.content = basketView.render();
+}
+
+
 });
 
-events.on('card:delete', ({ card }: { card: string }) => {
-  cart.removeItem(card);
-});
 
 events.on('basket:open', () => {
   drawBasket();
@@ -156,22 +180,21 @@ events.on('basket:order', () => {
 customer.on('customer:changed', () => {
   const errors = customer.validateCustomerInfo();
   orderForm.validateForm(errors);
-  contactsForm.validateForm(errors);
+  contactsForm.setFormValidation(errors);
 });
 
 // Обработка изменений на формах
-events.on(
-  'order:change',
-  ({ field, value }: { field: string; value: string }) => {
-    if (field === 'payment' && (value === 'cash' || value === 'card')) {
-      customer.payment = value as TPayment;
-      return;
-    }
-    if (field === 'address') customer.address = value;
-    if (field === 'email') customer.email = value;
-    if (field === 'phone') customer.phone = value;
+events.on('order:change', ({ field, value }: { field: string; value: string }) => {
+  if (field === 'payment' && (value === 'cash' || value === 'card')) {
+    customer.payment = value as TPayment;
+    orderForm.payment = value as TPayment; // <-- обновление UI
+    return;
   }
-);
+  if (field === 'address') customer.address = value;
+  if (field === 'email') customer.email = value;
+  if (field === 'phone') customer.phone = value;
+});
+
 
 // Переход к второму шагу (ContactsForm)
 events.on('order:next', () => {
