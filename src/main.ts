@@ -101,19 +101,6 @@ events.on('card:open', ({ card }: { card: string }) => {
   if (product) catalog.setSelected(product);
 });
 
-events.on("card:toggle", ({ card }: { card: string }) => {
-  const product = catalog.getProductById(card);
-  if (!product || product.price === null) return;
-
-  if (cart.hasItem(card)) {
-    cart.removeItem(card);
-  } else {
-    cart.addItem(product);
-  }
-});
-
-
-
 /* ======================
    Корзина
 ====================== */
